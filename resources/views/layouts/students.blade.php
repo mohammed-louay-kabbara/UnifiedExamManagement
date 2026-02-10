@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>@yield('title')</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: Tahoma, Arial;
+        }
+
+        .nav-link.active {
+            font-weight: bold;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#teacherNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="teacherNavbar">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"
+                            href="{{ route('dashboard') }}">
+                            الرئيسية
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('show_examcycles') ? 'active' : '' }}"
+                            href="{{ route('show_examcycles') }}">
+                            برنامج الامتحان
+                        </a>
+                    </li>
+                    <li class="nav-item ">
+                        <a class="nav-link {{ request()->routeIs('student_years') ? 'active' : '' }}"
+                            href="{{ route('student_years') }}">
+                            بنك الأسئلة
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('years_exam') ? 'active' : '' }}"
+                            href="{{ route('years_exam') }}">
+                            الامتحان
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('profile_student') ? 'active' : '' }}"
+                            href="{{ route('profile_student') }}">
+                            الملف الشخصي
+                        </a>
+                    </li>
+                </ul>
+                <form action="{{ route('logout') }}" method="POST" class="me-auto">
+                    @csrf
+                    <button class="btn btn-sm btn-outline-light" type="submit">
+                        تسجيل الخروج
+                    </button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        @if (session('alert'))
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                {{ session('alert') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+        @yield('content')
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
