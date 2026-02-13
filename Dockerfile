@@ -1,7 +1,7 @@
-# استخدام نسخة PHP الرسمية مع Apache
+# استخدام صورة PHP رسمية مع Apache
 FROM php:8.2-apache
 
-# 1. تثبيت الحزم الضرورية للنظام وإضافات PHP المطلوبة
+# 1. تثبيت الحزم الضرورية للنظام
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -10,42 +10,49 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     zip \
     unzip \
-    libzip-dev \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
+    libzip-dev
 
-# 2. حل مشكلة (More than one MPM loaded) - مهم جداً لـ Railway
-# نقوم بتعطيل mpm_event و mpm_worker وتفعيل mpm_prefork لضمان استقرار Apache
+# 2. تنظيف ملفات الكاش
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# 3. تثبيت إضافات PHP المطلوبة لـ Laravel
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
+
+# 4. حل مشكلة (More than one MPM loaded) وتفعيل الـ Rewrite
+# نقوم بتعطيل الوحدات المتعارضة وتفعيل mpm_prefork المتوافقة مع PHP
 RUN a2dismod mpm_event mpm_worker || true \
     && a2enmod mpm_prefork \
     && a2enmod rewrite
 
-# 3. تعديل مسار المجلد العام ليشير إلى public بدلاً من html
+# 5. تعديل مجلد الروت ليشير إلى public
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/000-default.conf
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf
 
-# 4. تثبيت Composer
+# 6. تثبيت Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# 5. تثبيت Node.js و NPM (لبناء ملفات CSS و JS في لارافيل 12)
+# 7. تثبيت Node.js و NPM (لبناء ملفات Vite)
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs
 
-# 6. تحديد مجلد العمل ونسخ ملفات المشروع
+# 8. تحديد مجلد العمل
 WORKDIR /var/www/html
+
+# 9. نسخ ملفات المشروع
 COPY . .
 
-# 7. تثبيت مكتبات PHP (Composer)
+# 10. تثبيت مكتبات PHP
 RUN composer install --no-interaction --optimize-autoloader --no-dev
 
-# 8. تثبيت مكتبات Node وبناء ملفات Vite (Assets Build)
+# 11. تثبيت مكتبات Node وبناء ملفات الـ Assets
 RUN npm install && npm run build
 
-# 9. ضبط الصلاحيات للمجلدات (لتجنب خطأ 500 أو Permission Denied)
+# 12. ضبط الصلاحيات لمجلدات التخزين والـ Cache
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# 10. فتح المنفذ 80
+# 13. المنفذ
 EXPOSE 80
 
-# 11. أمر التشغيل النهائي (تنظيف إعدادات MPM الزائدة ثم البدء)
+# 14. أمر التشغيل النهائي مع تنظيف إعدادات MPM الزائدة
 CMD ["bash", "-c", "rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.* && apache2-foreground"]
